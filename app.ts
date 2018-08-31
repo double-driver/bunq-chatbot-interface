@@ -1,5 +1,10 @@
+// NPM packages
 const restify = require('restify');
 const builder = require('botbuilder');
+
+// API classes
+const oauth = require('./src/oauth');
+
 
 // Setup Restify Server
 const server = restify.createServer();
@@ -14,6 +19,8 @@ const connector = new builder.ChatConnector({
 });
 
 // Listen for messages from users
+server.post('/api/oauth/login', oauth.generateLoginUri);
+server.post('/api/oauth/redirect', oauth.generateLoginUri);
 server.post('/api/messages', connector.listen());
 
 const inMemoryStorage = new builder.MemoryBotStorage();

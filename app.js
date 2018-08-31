@@ -1,6 +1,9 @@
 "use strict";
+// NPM packages
 var restify = require('restify');
 var builder = require('botbuilder');
+// API classes
+var oauth = require('./src/oauth');
 // Setup Restify Server
 var server = restify.createServer();
 server.listen(process.env.port || process.env.PORT || 3978, function () {
@@ -12,6 +15,8 @@ var connector = new builder.ChatConnector({
     appPassword: process.env.MicrosoftAppPassword
 });
 // Listen for messages from users
+server.post('/api/oauth/login', oauth.generateLoginUri);
+server.post('/api/oauth/redirect', oauth.generateLoginUri);
 server.post('/api/messages', connector.listen());
 var inMemoryStorage = new builder.MemoryBotStorage();
 // Receive messages from the user and respond by echoing each message back (prefixed with 'You said:')
