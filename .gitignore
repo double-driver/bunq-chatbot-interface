@@ -77,3 +77,6 @@ tests/baselines/reference/dt
 .failed-tests
 TEST-results.xml
 package-lock.json
+
+# The config file of the project
+config.json
