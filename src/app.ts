@@ -1,3 +1,5 @@
+import { database } from "./database";
+
 const restify = require('restify');
 const builder = require('botbuilder');
 
@@ -75,3 +77,4 @@ bot.dialog('requestDialog', (session: any) => {
 bot.dialog('balanceDialog', (session: any) => {
     session.endDialog("Your balance is...");
 }).triggerAction({matches: 'Balance'});
+
