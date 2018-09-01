@@ -107,27 +107,36 @@ bot.dialog('sendDialog', [
         session.dialogData.recipientName = results.response;
         builder.Prompts.text(session, "What's the description of your transaction?");
     },
-    function (session, results) {
+    async function (session, results) {
         session.dialogData.description = results.response;
-
-        // Process request and display reservation details
-        session.send(`Transaction details: <br/>Amount: ${session.dialogData.amount} <br/>Recipient's IBAN: ${session.dialogData.recipientIban} <br/>Recipient's name: ${session.dialogData.recipientName} <br/>Description: ${session.dialogData.description}`);
-        builder.Prompts.confirm(session, 'Is everything correct?');
+        session.dialogData.accountChoices = await actions.generateAccountChoices(session.userData.id);
+        builder.Prompts.choice(session, "From which account do you want to send?", session.dialogData.accountChoices);
     },
     function (session, results) {
-        if (results.response) {
-            const result = actions.sendPayment(
-                session.userData.id,
-                session.dialogData.amount,
-                session.dialogData.recipientIban,
-                session.dialogData.recipientName,
-                session.dialogData.description
-            );
+        session.dialogData.selectedAccount = {
+            description: results.response.entity,
+            id: session.dialogData.accountChoices[results.response.entity].id
+        };
 
-            if (result) {
+        // Process request and confirm with the user
+        session.send(`Transaction details: <br/><br/>Amount: €${session.dialogData.amount} <br/>Recipient's IBAN: ${session.dialogData.recipientIban} <br/>Recipient's name: ${session.dialogData.recipientName} <br/>Description: ${session.dialogData.description} <br/><br/>Selected account: ${session.dialogData.selectedAccount.description}`);
+        builder.Prompts.confirm(session, 'Is everything correct?');
+    },
+    async function (session, results) {
+        if (results.response) {
+            try {
+                const result = await actions.sendPayment(
+                    session.userData.id,
+                    session.dialogData.selectedAccount.id,
+                    String(session.dialogData.amount),
+                    session.dialogData.recipientIban,
+                    session.dialogData.recipientName,
+                    session.dialogData.description
+                );
                 session.send('Transaction successful!');
-            } else {
-                session.send('Transaction failed!');
+            } catch (e) {
+                const errorMessage = JSON.parse(e.error);
+                session.send(`Transaction failed! <br/><br/>${errorMessage['Error'][0]['error_description_translated']}`);
             }
         } else {
             session.send('Transaction cancelled!');
