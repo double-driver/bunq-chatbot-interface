@@ -29,7 +29,6 @@ const installationTokenFile = __dirname + '/' + config.json.installationTokenFil
 const privateKeyFile = __dirname + '/' + config.json.privateKeyFile;
 const bunqSessionFile = __dirname + '/' + config.json.bunqSessionFile;
 const bunqSessionHistoryPath = __dirname + '/' + config.json.bunqSessionHistoryPath;
-const userDataFile = secretsPath + '/requestUserResponse.json';
 
 
 class Oauth {
@@ -188,40 +187,6 @@ class Oauth {
             }).catch(function (error: string) {
                 console.log("error : " + error);
                 reject();
-            });
-        });
-    }
-
-    static getBalance() {
-        return new Promise((resolve, reject) => {
-            const userData = BunqApiConfig.readJson(userDataFile);
-            const deviceServerConfig = BunqApiConfig.readJson(secretsFile);
-            const privateKeyPem: string = BunqApiConfig.read(privateKeyFile);
-            const key: BunqKey = new BunqKey(privateKeyPem);
-            const installationTokenConfig = BunqApiConfig.readJson(installationTokenFile);
-            const installationToken: string = installationTokenConfig.Response[1].Token.token;
-            const connect: BunqConnection = new BunqConnection();
-            const setup: BunqApiSetup = new BunqApiSetup(connect, key, deviceServerConfig.secret, installationToken);
-            const bunqApi: BunqApi = new BunqApi(
-                connect,
-                key,
-                deviceServerConfig.secret,
-                setup,
-                bunqSessionFile,
-                bunqSessionHistoryPath
-            );
-
-            bunqApi.setPubBunqKeyPem(installationTokenConfig.Response[2].ServerPublicKey.server_public_key);
-
-            bunqApi.requestMonetaryAccountBank(userData.Response[0].UserApiKey.id, deviceServerConfig.accountId).then((response: any) => {
-                console.log(response);
-                fs.writeFileSync(secretsPath + "/requestMABResponse.json", response);
-                let resp: any = JSON.parse(response);
-                console.log("balance: " + resp.Response[0].MonetaryAccountBank.balance.value);
-                resolve(resp.Response[0].MonetaryAccountBank.balance.value);
-            }).catch(function (error: string) {
-                console.log(error);
-                reject(error);
             });
         });
     }

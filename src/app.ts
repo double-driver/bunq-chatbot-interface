@@ -42,6 +42,10 @@ bot.recognizer({
 
         if (context.message.text) {
             switch (context.message.text.toLowerCase()) {
+                case 'login':
+                    // @ts-ignore
+                    intent = {score: 1.0, intent: 'Login'};
+                    break;
                 case 'send':
                     // @ts-ignore
                     intent = {score: 1.0, intent: 'Send'};
@@ -76,6 +80,10 @@ bot.dialog('firstRun', (session: any) => {
     }
 });
 
+bot.dialog('loginDialog', (session: any) => {
+    session.endDialog(oauth.generateLoginUri());
+}).triggerAction({matches: 'Login'});
+
 bot.dialog('sendDialog', (session: any) => {
     session.endDialog("So you want to send money. That's great I can help in that!");
 }).triggerAction({matches: 'Send'});
@@ -84,8 +92,9 @@ bot.dialog('requestDialog', (session: any) => {
     session.endDialog("So you want to get money. That's great I can help in that!");
 }).triggerAction({matches: 'Request'});
 
-bot.dialog('balanceDialog', (session: any) => {
-    session.endDialog("Your balance is...");
+bot.dialog('balanceDialog', async (session: any) => {
+    const balance = await actions.getBalance();
+    session.endDialog(`Your balance is €${balance}`);
 }).triggerAction({matches: 'Balance'});
 
 database.startWeb();
