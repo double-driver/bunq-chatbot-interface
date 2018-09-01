@@ -130,6 +130,23 @@ class Actions {
         });
     }
 
+    static retrieveBunqMeLink(userId) {
+        return new Promise(async (resolve, reject) => {
+            const userData = await Actions.requestUser(userId);
+
+            for (let account of userData.accountInfo['Response']) {
+                for (let alias of account['MonetaryAccountBank']['alias']) {
+                    if (alias.type === 'URL') {
+                        resolve(alias.value);
+                        return;
+                    }
+                }
+            }
+
+            reject(false);
+        });
+    }
+
     static async requestUser(userId) {
         return await database.retrieveUser(userId);
     }

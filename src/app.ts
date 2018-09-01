@@ -46,6 +46,10 @@ bot.recognizer({
                     // @ts-ignore
                     intent = {score: 1.0, intent: 'Send'};
                     break;
+                case 'request':
+                    // @ts-ignore
+                    intent = {score: 1.0, intent: 'Request'};
+                    break;
                 case 'transactions':
                     // @ts-ignore
                     intent = {score: 1.0, intent: 'Transactions'};
@@ -146,9 +150,49 @@ bot.dialog('sendDialog', [
     }
 ]).triggerAction({matches: 'Send'});
 
+bot.dialog('requestDialog', [
+    async function (session, results) {
+        session.send("So you wanna receive money? We can help you with that!");
+        builder.Prompts.number(session, "How much money do you want to receive? (in €)");
+    },
+    async function (session, results) {
+        session.dialogData.amount = results.response;
+        const bunqMeLink = await actions.retrieveBunqMeLink(session.userData.id);
+
+        session.send(`Please share this link with the other person: <br/><br/>${bunqMeLink + '/' + session.dialogData.amount + '/'}`);
+    },
+    async function (session, results) {
+        session.dialogData.selectedAccount = {
+            description: results.response.entity,
+            id: session.dialogData.accountChoices[results.response.entity].id
+        };
+
+        try {
+            const result = await actions.pastTransactions(
+                session.userData.id,
+                session.dialogData.selectedAccount.id
+            );
+
+            const transactions = {};
+            for (let transaction of result['Response']) {
+                transactions[transaction['Payment'].id] = {
+                    amount: `€${transaction['Payment']['amount']['value']}`,
+                };
+            }
+
+            session.send(`Your recent transactions: <br/><br/>${JSON.stringify(transactions)}`);
+        } catch (e) {
+            const errorMessage = JSON.parse(e.error);
+            session.send(`Request failed! <br/><br/>${errorMessage['Error'][0]['error_description_translated']}`);
+        }
+
+        session.endDialog();
+    }
+]).triggerAction({matches: 'Request'});
+
 bot.dialog('transactionsDialog', [
     async function (session, results) {
-        session.send("So you wanna send money? We can help you with that!");
+        session.send("So you wanna see your latest transactions? We can help you with that!");
         session.dialogData.accountChoices = await actions.generateAccountChoices(session.userData.id);
         builder.Prompts.choice(session, "From which account do you want to send?", session.dialogData.accountChoices);
     },
@@ -185,15 +229,3 @@ bot.dialog('balanceDialog', async (session: any) => {
     const balance = await actions.getBalance(session.userData.id);
     session.endDialog(`Your balance is €${balance}`);
 }).triggerAction({matches: 'Balance'});
-
-bot.dialog('askAmount', [(session: any) => {
-    builder.Prompts.number(session, 'Which amount?');
-}, (session: any, results: any) => {
-    session.endDialogWithResult(results);
-}]);
-
-bot.dialog('askRecipient', [(session: any) => {
-    builder.Prompts.text(session, 'To which IBAN do you want to send it?');
-}, (session: any, results: any) => {
-    session.endDialogWithResult(results);
-}]);
