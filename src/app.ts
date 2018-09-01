@@ -1,4 +1,4 @@
-import {database} from "./database";
+
 
 // NPM packages
 const restify = require('restify');
@@ -111,5 +111,3 @@ bot.dialog('askAmount', [(session: any) => {
     session.endDialogWithResult(results);
 }]);
 
-database.startWeb();
-database.addUser(123456789, "user", "is", "now", "added");
