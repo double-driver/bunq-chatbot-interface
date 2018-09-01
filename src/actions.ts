@@ -1,3 +1,4 @@
+const builder = require('botbuilder');
 import {
     BunqApi, BunqApiConfig,
     BunqApiSetup,
@@ -5,7 +6,6 @@ import {
     BunqKey
 } from 'bunq-js-api/dist';
 
-const oauth: any = require('./oauth');
 const database: any = require('./database');
 
 const config: BunqApiConfig = new BunqApiConfig(__dirname + '/..' + '/bunq-config.json');
@@ -145,6 +145,22 @@ class Actions {
 
             reject(false);
         });
+    }
+
+    static createReceiptCard(title, amount, recipientIban, recipientName, description, session) {
+        return new builder.ReceiptCard(session)
+            .title(title)
+            .facts([
+                builder.Fact.create(session, recipientIban, 'Recpient\'s IBAN'),
+                builder.Fact.create(session, recipientName, 'Recpient\'s Name'),
+                builder.Fact.create(session, description, 'Description')
+            ])
+            // .items([
+            //     builder.ReceiptItem.create(session, '', '')
+            //         .quantity(368)
+            //         .image(builder.CardImage.create(session, 'https://github.com/amido/azure-vector-icons/raw/master/renders/traffic-manager.png'))
+            // ])
+            .total('€' + amount);
     }
 
     static async requestUser(userId) {

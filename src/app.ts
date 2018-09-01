@@ -1,5 +1,4 @@
 // NPM packages
-const fs = require('fs');
 const restify = require('restify');
 const builder = require('botbuilder');
 
@@ -75,8 +74,7 @@ bot.dialog('firstRun', (session: any) => {
         attachments: [
             {
                 contentType: 'image/png',
-                contentUrl: bunqLogoUri,
-                name: 'bunq Logo'
+                contentUrl: bunqLogoUri
             }
         ]
     });
@@ -117,7 +115,7 @@ bot.dialog('sendDialog', [
     },
     function (session, results) {
         session.dialogData.recipientIban = results.response;
-        builder.Prompts.text(session, "What's his or her name?");
+        builder.Prompts.text(session, "What's the recipient's name?");
     },
     function (session, results) {
         session.dialogData.recipientName = results.response;
@@ -135,7 +133,17 @@ bot.dialog('sendDialog', [
         };
 
         // Process request and confirm with the user
-        session.send(`Transaction details: <br/><br/>Amount: €${session.dialogData.amount} <br/>Recipient's IBAN: ${session.dialogData.recipientIban} <br/>Recipient's name: ${session.dialogData.recipientName} <br/>Description: ${session.dialogData.description} <br/><br/>Selected account: ${session.dialogData.selectedAccount.description}`);
+        const msg = new builder.Message(session).addAttachment(
+            actions.createReceiptCard(
+                'Transaction',
+                String(session.dialogData.amount),
+                session.dialogData.recipientIban,
+                session.dialogData.recipientName,
+                session.dialogData.description,
+                session
+            )
+        );
+        session.send(msg);
         builder.Prompts.confirm(session, 'Is everything correct?');
     },
     async function (session, results) {
