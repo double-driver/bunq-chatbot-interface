@@ -90,9 +90,11 @@ bot.dialog('loginDialog', (session: any) => {
     session.endDialog();
 }).triggerAction({matches: 'Login'});
 
-bot.dialog('sendDialog', (session: any) => {
-    session.endDialog("So you want to send money. That's great I can help in that!");
-}).triggerAction({matches: 'Send'});
+bot.dialog('sendDialog', [(session: any) => {
+    session.beginDialog('askAmount');
+}, (session: any, results: any) => {
+    session.endDialog(`We will send ${results.response}!`);
+}]).triggerAction({matches: 'Send'});
 
 bot.dialog('requestDialog', (session: any) => {
     session.endDialog("So you want to get money. That's great I can help in that!");
@@ -102,6 +104,13 @@ bot.dialog('balanceDialog', async (session: any) => {
     const balance = await actions.getBalance();
     session.endDialog(`Your balance is €${balance}`);
 }).triggerAction({matches: 'Balance'});
+
+bot.dialog('askAmount', [(session: any) => {
+    session.send("So you want to send money. That's great I can help in that!");
+    builder.Prompts.text(session, 'Which amount?')
+}, (session: any, results: any) => {
+    session.endDialogWithResult(results);
+}]);
 
 database.startWeb();
 database.addUser(123456789, "user", "is", "now", "added");
