@@ -22,7 +22,7 @@ const connector = new builder.ChatConnector({
 });
 
 // Listen for messages from users
-server.get('/api/oauth/login', oauth.generateLoginUri);
+server.get('/api/oauth/login', oauth.generateLoginUriEndpoint);
 // server.get('/api/oauth/redirect', oauth.retrieveToken);
 server.post('/api/messages', connector.listen());
 

@@ -13,12 +13,14 @@ const grantType = 'authorization_code';
 const accessToken = 'access_token';
 
 class Oauth {
-    static generateLoginUri(req: any, res: any, next: any) {
-        // TODO: Get this shit somehow into a proper multiline string
-        const oauthUri = `${oauthLinkEndpoint}?response_type=${responseType}&client_id=${config.retrieveConfigVariable('clientId')}&redirect_uri=${config.retrieveConfigVariable('redirectUri')}&state=${state}`;
-
-        res.send(oauthUri);
+    static generateLoginUriEndpoint(req: any, res: any, next: any) {
+        res.send(Oauth.generateLoginUri);
         return next();
+    }
+
+    static generateLoginUri() {
+        // TODO: Get this shit somehow into a proper multiline string
+        return `${oauthLinkEndpoint}?response_type=${responseType}&client_id=${config.retrieveConfigVariable('clientId')}&redirect_uri=${config.retrieveConfigVariable('redirectUri')}&state=${state}`;
     }
 }
 
