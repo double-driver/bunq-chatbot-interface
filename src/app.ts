@@ -4,7 +4,6 @@ const restify = require('restify');
 const builder = require('botbuilder');
 
 // API classes
-const database = require('./database');
 const oauth = require('./oauth');
 const actions = require('./actions');
 
@@ -91,11 +90,51 @@ bot.dialog('loginDialog', (session: any) => {
     session.endDialog();
 }).triggerAction({matches: 'Login'});
 
-bot.dialog('sendDialog', [(session: any) => {
-    session.beginDialog('askAmount');
-}, (session: any, results: any) => {
-    session.dialog(`Who do you want to send €${results.response}?`);
-}]).triggerAction({matches: 'Send'});
+bot.dialog('sendDialog', [
+    function (session) {
+        session.send("So you wanna send money? We can help you with that!");
+        builder.Prompts.number(session, "How much money do you want to send? (in €)");
+    },
+    function (session, results) {
+        session.dialogData.amount = results.response;
+        builder.Prompts.text(session, "What's the IBAN of the recipient?");
+    },
+    function (session, results) {
+        session.dialogData.recipientIban = results.response;
+        builder.Prompts.text(session, "What's his or her name?");
+    },
+    function (session, results) {
+        session.dialogData.recipientName = results.response;
+        builder.Prompts.text(session, "What's the description of your transaction?");
+    },
+    function (session, results) {
+        session.dialogData.description = results.response;
+
+        // Process request and display reservation details
+        session.send(`Transaction details: <br/>Amount: ${session.dialogData.amount} <br/>Recipient's IBAN: ${session.dialogData.recipientIban} <br/>Recipient's name: ${session.dialogData.recipientName} <br/>Description: ${session.dialogData.description}`);
+        builder.Prompts.confirm(session, 'Is everything correct?');
+    },
+    function (session, results) {
+        if (results.response) {
+            const result = actions.sendPayment(
+                session.dialogData.amount,
+                session.dialogData.recipientIban,
+                session.dialogData.recipientName,
+                session.dialogData.description
+            );
+
+            if (result) {
+                session.send('Transaction successful!');
+            } else {
+                session.send('Transaction failed!');
+            }
+        } else {
+            session.send('Transaction cancelled!');
+        }
+
+        session.endDialog();
+    }
+]).triggerAction({matches: 'Send'});
 
 bot.dialog('requestDialog', (session: any) => {
     session.endDialog("So you want to get money. That's great I can help in that!");
@@ -107,8 +146,13 @@ bot.dialog('balanceDialog', async (session: any) => {
 }).triggerAction({matches: 'Balance'});
 
 bot.dialog('askAmount', [(session: any) => {
-    session.send("So you want to send money. That's great I can help in that!");
-    builder.Prompts.number(session, 'Which amount?')
+    builder.Prompts.number(session, 'Which amount?');
+}, (session: any, results: any) => {
+    session.endDialogWithResult(results);
+}]);
+
+bot.dialog('askRecipient', [(session: any) => {
+    builder.Prompts.text(session, 'To which IBAN do you want to send it?');
 }, (session: any, results: any) => {
     session.endDialogWithResult(results);
 }]);

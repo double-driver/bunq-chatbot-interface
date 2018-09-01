@@ -4,22 +4,15 @@ const configHandler: any = require('./config');
 
 
 class Database {
-    static createUser(data) {
-        MongoClient.connect(`mongodb://${configHandler.retrieveConfigVariable('mongoDb')}`, (err, client) => {
-            if (err) {
-                throw err;
-            }
+    static async createUser(data) {
+        const client = await MongoClient.connect(`mongodb://${configHandler.retrieveConfigVariable('mongoDb')}`);
+        const db = client.db('bunq');
+        const collection = db.collection('users');
 
-            const db = client.db('bunq');
-            const collection = db.collection('users');
+        const result = await collection.insert(data);
+        client.close();
 
-            collection.insert(data, (err, result) => {
-                if (err) console.error(err);
-                console.log(result);
-            });
-
-            client.close();
-        });
+        return result;
     }
 
     static async retrieveUser(userId) {

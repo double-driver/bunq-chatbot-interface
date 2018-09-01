@@ -44,23 +44,24 @@ class Actions {
         });
     }
 
-    // static sendPayment(amount, iban, name, description) {
-    //     bunqApi.sendPayment(
-    //         deviceServerConfig.userId,
-    //         deviceServerConfig.accountId,
-    //         amount,
-    //         iban,
-    //         name,
-    //         description
-    //     )
-    //         .then((response: string) => {
-    //             const resp: any = JSON.parse(response);
-    //             console.log("balance: " + resp.Response[0].MonetaryAccountBank.balance.value);
-    //             return resp;
-    //         }).catch((error: string) => {
-    //             console.log("error:" + error);
-    //         });
-    // }
+    static sendPayment(amount, iban, name, description) {
+        return true;
+        // bunqApi.sendPayment(
+        //     deviceServerConfig.userId,
+        //     deviceServerConfig.accountId,
+        //     amount,
+        //     iban,
+        //     name,
+        //     description
+        // )
+        //     .then((response: string) => {
+        //         const resp: any = JSON.parse(response);
+        //         console.log("balance: " + resp.Response[0].MonetaryAccountBank.balance.value);
+        //         return resp;
+        //     }).catch((error: string) => {
+        //         console.log("error:" + error);
+        //     });
+    }
 
     static async requestUser(userId) {
         return await database.retrieveUser(userId);
