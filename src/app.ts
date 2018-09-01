@@ -5,6 +5,7 @@ const restify = require('restify');
 const builder = require('botbuilder');
 
 // API classes
+const database = require('./database');
 const oauth = require('./oauth');
 const actions = require('./actions');
 
@@ -64,6 +65,7 @@ bot.recognizer({
 // Add first run dialog
 bot.dialog('firstRun', (session: any) => {
     session.userData.firstRun = true;
+    session.userData.id = session.message.user.id;
     session.send("Hi there! I am DoubleDriver your very own Bunq bot. You can send money, request money, or check your balance. Sounds great?");
     session.beginDialog("loginDialog");
 }).triggerAction({
@@ -81,7 +83,7 @@ bot.dialog('firstRun', (session: any) => {
 bot.dialog('loginDialog', (session: any) => {
     let signinCard = new builder.SigninCard(session)
         .text('Time to connect our intelligent bot')
-        .button('Connect to bunq', oauth.generateLoginUri());
+        .button('Connect to bunq', oauth.generateLoginUri(session.userData.id));
 
     let msg = new builder.Message(session).addAttachment(signinCard);
 
@@ -100,7 +102,7 @@ bot.dialog('requestDialog', (session: any) => {
 }).triggerAction({matches: 'Request'});
 
 bot.dialog('balanceDialog', async (session: any) => {
-    const balance = await actions.getBalance();
+    const balance = await actions.getBalance(session.userData.id);
     session.endDialog(`Your balance is €${balance}`);
 }).triggerAction({matches: 'Balance'});
 

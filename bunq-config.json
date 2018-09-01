@@ -4,6 +4,6 @@
   "publicKeyFile" : "../bunqSecrets/clientPublicKey.pem",
   "privateKeyFile" : "../bunqSecrets/clientPrivateKey.pem",
   "installationTokenFile" : "../bunqSecrets/bunqInstallationToken.json",
-  "bunqSessionFile" : "../bunqSecrets/bunqSession.json",
+  "bunqSessionFile" : "../bunqSecrets/bunqSession",
   "bunqSessionHistoryPath" : "../bunqSecrets/sessions"
 }

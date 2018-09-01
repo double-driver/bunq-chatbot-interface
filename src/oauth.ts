@@ -10,11 +10,12 @@ import {
 } from 'bunq-js-api/dist';
 
 const configHandler: any = require('./config');
+const database = require('./database');
 
 // Link generation
 const oauthLinkEndpoint = 'https://oauth.bunq.com/auth';
 const responseType = 'code';
-const state = 'doubledriver';
+const state = 'state';
 
 // Token exchange
 const oauthTokenExchangeEndpoint = 'https://api.oauth.bunq.com/v1/token';
@@ -33,12 +34,15 @@ const bunqSessionHistoryPath = __dirname + '/' + config.json.bunqSessionHistoryP
 
 class Oauth {
     static async generateLoginUriEndpoint(req: any, res: any, next: any) {
-        res.send(Oauth.generateLoginUri());
+        res.send(Oauth.generateLoginUri('double-driver'));
         return next();
     }
 
     static async retrieveToken(req: any, res: any, next: any) {
         try {
+            // Set current user
+            const userId = req.query[state];
+
             // Retrieve token
             const response: any = await axios.request({
                 url: oauthTokenExchangeEndpoint,
@@ -52,23 +56,32 @@ class Oauth {
                 }
             });
 
-            // Write token into a file
-            fs.writeFileSync(secretsFile, JSON.stringify({
+            // Save token
+            const token = {
                 secret: response.data[accessToken],
                 description: 'bunq-chatbot-interface'
-            }));
+            };
 
             // Create new public/private key pair
-            await Oauth.createKeys();
+            const keypair = await Oauth.createKeys();
 
             // Install the new key pair with the bunq API
-            await Oauth.installKeys();
+            const installationToken = await Oauth.installKeys(keypair[1]);
 
             // Create device server
-            await Oauth.createDeviceServer();
+            const deviceServer = await Oauth.createDeviceServer(token, keypair[1], installationToken);
 
             // Create session
-            await Oauth.createSession();
+            const session = await Oauth.createSession(userId, token, keypair[1], installationToken);
+
+            database.createUser({
+                userId,
+                token,
+                keypair,
+                installationToken,
+                deviceServer,
+                session
+            });
 
             res.send('Successful!');
         } catch (e) {
@@ -82,32 +95,24 @@ class Oauth {
             try {
                 let bunqKey: BunqKey = BunqKey.createNew();
                 let publicPem = bunqKey.toPublicKeyString();
-                let publicKeyName: string = secretsPath + "/clientPublicKey" + ".pem";
-                fs.writeFileSync(publicKeyName, publicPem);
-
                 let privatePem = bunqKey.toPrivateKeyString();
-                let privateKeyName: string = secretsPath + "/clientPrivateKey" + ".pem";
-                fs.writeFileSync(privateKeyName, privatePem);
 
-                resolve();
+                resolve([publicPem, privatePem]);
             } catch (e) {
                 reject(e);
             }
         });
     }
 
-    static installKeys() {
+    static installKeys(privateKey) {
         return new Promise(async (resolve, reject) => {
-            const key: BunqKey = BunqKey.createFromPrivateKeyFile(privateKeyFile);
+            const key: BunqKey = new BunqKey(privateKey);
             const setup: BunqApiSetup = new BunqApiSetup(new BunqConnection(), key, "", "");
 
             try {
                 const response = await setup.installKey();
-                fs.writeFileSync(secretsPath + '/bunqInstallationToken' + '.json', response);
                 let resp: any = JSON.parse(response);
-                console.log("installation token: " + resp.Response[1].Token.token);
-                console.log("Bunq server public key: " + resp.Response[2].ServerPublicKey.server_public_key);
-                resolve(resp.Response[1].Token.token);
+                resolve(resp);
             } catch (e) {
                 console.log("error : " + e, 'installKeys()');
                 reject(e);
@@ -115,20 +120,15 @@ class Oauth {
         });
     }
 
-    static createDeviceServer() {
+    static createDeviceServer(token, privateKey, installationTokenData) {
         return new Promise((resolve, reject) => {
-            const deviceServerConfig = BunqApiConfig.readJson(secretsFile);
-            const key: BunqKey = BunqKey.createFromPrivateKeyFile(privateKeyFile);
-            const installationTokenConfig = BunqApiConfig.readJson(installationTokenFile);
-            const installationToken: string = installationTokenConfig.Response[1].Token.token;
-            console.log(installationToken);
-            const setup: BunqApiSetup = new BunqApiSetup(new BunqConnection(), key, deviceServerConfig.secret, installationToken);
+            const key: BunqKey = new BunqKey(privateKey);
+            const installationToken: string = installationTokenData.Response[1].Token.token;
+            const setup: BunqApiSetup = new BunqApiSetup(new BunqConnection(), key, token.secret, installationToken);
 
-            setup.createDeviceServer(deviceServerConfig.description).then((response: string) => {
-                fs.writeFileSync(secretsPath + '/bunqDeviceServerResponse' + '.json', response);
+            setup.createDeviceServer(token.description).then((response: string) => {
                 let resp: any = JSON.parse(response);
-                console.log('created device server id: ' + resp.Response[0].Id.id);
-                resolve(resp.Response[0].Id.id);
+                resolve(resp);
             }).catch((error: string) => {
                 console.log('error : ' + error, 'createDeviceServer()');
                 reject(error);
@@ -136,23 +136,18 @@ class Oauth {
         });
     }
 
-    static createSession() {
+    static createSession(userId, token, privateKey, installationTokenData) {
         return new Promise((resolve, reject) => {
-            const deviceServerConfig = BunqApiConfig.readJson(secretsFile);
-            const privateKeyPem: string = BunqApiConfig.read(privateKeyFile);
-            const key: BunqKey = new BunqKey(privateKeyPem);
-            const installationTokenConfig = BunqApiConfig.readJson(installationTokenFile);
-            const installationToken: string = installationTokenConfig.Response[1].Token.token;
-            const setup: BunqApiSetup = new BunqApiSetup(new BunqConnection(), key, deviceServerConfig.secret, installationToken);
+            const key: BunqKey = new BunqKey(privateKey);
+            const installationToken: string = installationTokenData.Response[1].Token.token;
+            const setup: BunqApiSetup = new BunqApiSetup(new BunqConnection(), key, token.secret, installationToken);
 
             setup.createSessionServer().then((response: string) => {
                 console.log(response);
-                fs.writeFileSync(bunqSessionHistoryPath + "/bunqSession_" + ".json", response);
-                fs.writeFileSync(bunqSessionFile, response);
+                fs.writeFileSync(bunqSessionHistoryPath + '/bunqSession_' + userId + '.json', response);
+                fs.writeFileSync(bunqSessionFile + userId + '.json', response);
                 let resp: any = JSON.parse(response);
-                console.log("created session server id: " + resp.Response[1].Token.id);
-                console.log("created session server token: " + resp.Response[1].Token.token);
-                resolve();
+                resolve(resp);
             }).catch((error: string) => {
                 console.log("error : " + error, 'createSession()');
                 reject();
@@ -160,40 +155,9 @@ class Oauth {
         });
     }
 
-    static requestUser() {
-        return new Promise((resolve, reject) => {
-            const deviceServerConfig = BunqApiConfig.readJson(secretsFile);
-            const privateKeyPem: string = BunqApiConfig.read(privateKeyFile);
-            const key: BunqKey = new BunqKey(privateKeyPem);
-            const installationTokenConfig = BunqApiConfig.readJson(installationTokenFile);
-            const installationToken: string = installationTokenConfig.Response[1].Token.token;
-            const connect: BunqConnection = new BunqConnection();
-            const setup: BunqApiSetup = new BunqApiSetup(connect, key, deviceServerConfig.secret, installationToken);
-            const bunqApi: BunqApi = new BunqApi(
-                connect,
-                key,
-                deviceServerConfig.secret,
-                setup,
-                bunqSessionFile,
-                bunqSessionHistoryPath
-            );
-
-            bunqApi.setPubBunqKeyPem(installationTokenConfig.Response[2].ServerPublicKey.server_public_key);
-
-            bunqApi.requestUser().then((response: string) => {
-                console.log(response);
-                fs.writeFileSync(secretsPath + "/requestUserResponse.json", response);
-                resolve();
-            }).catch(function (error: string) {
-                console.log("error : " + error);
-                reject();
-            });
-        });
-    }
-
-    static generateLoginUri() {
+    static generateLoginUri(userId) {
         // TODO: Get this shit into a proper multiline string somehow
-        return `${oauthLinkEndpoint}?response_type=${responseType}&client_id=${configHandler.retrieveConfigVariable('clientId')}&redirect_uri=${configHandler.retrieveConfigVariable('redirectUri')}&state=${state}`;
+        return `${oauthLinkEndpoint}?response_type=${responseType}&client_id=${configHandler.retrieveConfigVariable('clientId')}&redirect_uri=${configHandler.retrieveConfigVariable('redirectUri')}&state=${userId}`;
     }
 }
 

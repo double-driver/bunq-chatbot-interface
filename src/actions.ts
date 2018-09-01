@@ -1,50 +1,40 @@
 import {
-    BunqApi,
-    BunqApiConfig,
+    BunqApi, BunqApiConfig,
     BunqApiSetup,
     BunqConnection,
     BunqKey
 } from 'bunq-js-api/dist';
 
 const oauth: any = require('./oauth');
+const database: any = require('./database');
 
-// Bunq API config
 const config: BunqApiConfig = new BunqApiConfig(__dirname + '/..' + '/bunq-config.json');
-const secretsPath = __dirname + '/' + config.json.secretsPath;
-const secretsFile = __dirname + '/' + config.json.secretsFile;
-const installationTokenFile = __dirname + '/' + config.json.installationTokenFile;
-const privateKeyFile = __dirname + '/' + config.json.privateKeyFile;
-const bunqSessionFile = __dirname + '/' + config.json.bunqSessionFile;
-const bunqSessionHistoryPath = __dirname + '/' + config.json.bunqSessionHistoryPath;
-const userDataFile = secretsPath + '/requestUserResponse.json';
-
-// Bunq API objects
-const deviceServerConfig = BunqApiConfig.readJson(secretsFile);
-const privateKeyPem: string = BunqApiConfig.read(privateKeyFile);
-const key: BunqKey = new BunqKey(privateKeyPem);
-const installationTokenConfig = BunqApiConfig.readJson(installationTokenFile);
-const installationToken: string = installationTokenConfig.Response[1].Token.token;
-const connect: BunqConnection = new BunqConnection();
-const setup: BunqApiSetup = new BunqApiSetup(connect, key, deviceServerConfig.secret, installationToken);
-const bunqApi: BunqApi = new BunqApi(
-    connect,
-    key,
-    deviceServerConfig.secret,
-    setup,
-    bunqSessionFile,
-    bunqSessionHistoryPath
-);
-bunqApi.setPubBunqKeyPem(installationTokenConfig.Response[2].ServerPublicKey.server_public_key);
 
 
 class Actions {
-    static getBalance() {
+    static getBalance(userId) {
         return new Promise(async (resolve, reject) => {
-            await oauth.requestUser();
+            const userData = await Actions.requestUser(userId);
 
-            const userData = BunqApiConfig.readJson(userDataFile);
+            const bunqSessionFile = __dirname + '/' + config.json.bunqSessionFile + userId + '.json';
+            const bunqSessionHistoryPath = __dirname + '/' + config.json.bunqSessionHistoryPath + '/bunqSession_' + userId + '.json';
+            const userApiKeyId = userData.session.Response[2].UserApiKey.id;
+            const token = userData.token;
+            const key: BunqKey = new BunqKey(userData.keypair[1]);
+            const installationToken: string = userData.installationToken.Response[1].Token.token;
+            const connect: BunqConnection = new BunqConnection();
+            const setup: BunqApiSetup = new BunqApiSetup(connect, key, token.secret, installationToken);
+            const bunqApi: BunqApi = new BunqApi(
+                connect,
+                key,
+                token.secret,
+                setup,
+                bunqSessionFile,
+                bunqSessionHistoryPath
+            );
+            bunqApi.setPubBunqKeyPem(userData.installationToken.Response[2].ServerPublicKey.server_public_key);
 
-            bunqApi.requestMonetaryAccountBank(userData.Response[0].UserApiKey.id, deviceServerConfig.accountId).then((response: any) => {
+            bunqApi.requestMonetaryAccountBank(userApiKeyId, '').then((response: any) => {
                 let resp: any = JSON.parse(response);
                 resolve(resp.Response[0].MonetaryAccountBank.balance.value);
             }).catch((error: string) => {
@@ -54,22 +44,26 @@ class Actions {
         });
     }
 
-    static sendPayment(amount, iban, name, description) {
-        bunqApi.sendPayment(
-            deviceServerConfig.userId,
-            deviceServerConfig.accountId,
-            amount,
-            iban,
-            name,
-            description
-        )
-            .then((response: string) => {
-                const resp: any = JSON.parse(response);
-                console.log("balance: " + resp.Response[0].MonetaryAccountBank.balance.value);
-                return resp;
-            }).catch((error: string) => {
-                console.log("error:" + error);
-            });
+    // static sendPayment(amount, iban, name, description) {
+    //     bunqApi.sendPayment(
+    //         deviceServerConfig.userId,
+    //         deviceServerConfig.accountId,
+    //         amount,
+    //         iban,
+    //         name,
+    //         description
+    //     )
+    //         .then((response: string) => {
+    //             const resp: any = JSON.parse(response);
+    //             console.log("balance: " + resp.Response[0].MonetaryAccountBank.balance.value);
+    //             return resp;
+    //         }).catch((error: string) => {
+    //             console.log("error:" + error);
+    //         });
+    // }
+
+    static async requestUser(userId) {
+        return await database.retrieveUser(userId);
     }
 }
 
