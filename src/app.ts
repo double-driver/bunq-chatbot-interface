@@ -80,7 +80,14 @@ bot.dialog('firstRun', (session: any) => {
 });
 
 bot.dialog('loginDialog', (session: any) => {
-    session.endDialog(oauth.generateLoginUri());
+    let signinCard = new builder.SigninCard(session)
+        .text('Time to connect our intelligent bot')
+        .button('Connect to bunq', oauth.generateLoginUri());
+
+    let msg = new builder.Message(session).addAttachment(signinCard);
+
+    session.send(msg);
+    session.endDialog();
 }).triggerAction({matches: 'Login'});
 
 bot.dialog('sendDialog', (session: any) => {
