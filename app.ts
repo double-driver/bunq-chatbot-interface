@@ -8,6 +8,7 @@ const oauth = require('./src/oauth');
 
 // Setup Restify Server
 const server = restify.createServer();
+server.use(restify.plugins.queryParser());
 server.listen(process.env.port || process.env.PORT || 3978, () => {
     console.log('%s listening to %s', server.name, server.url);
 });
@@ -19,8 +20,8 @@ const connector = new builder.ChatConnector({
 });
 
 // Listen for messages from users
-server.post('/api/oauth/login', oauth.generateLoginUri);
-server.post('/api/oauth/redirect', oauth.generateLoginUri);
+server.get('/api/oauth/login', oauth.generateLoginUri);
+server.get('/api/oauth/redirect', oauth.retrieveToken);
 server.post('/api/messages', connector.listen());
 
 const inMemoryStorage = new builder.MemoryBotStorage();

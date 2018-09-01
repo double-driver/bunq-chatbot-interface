@@ -6,6 +6,7 @@ var builder = require('botbuilder');
 var oauth = require('./src/oauth');
 // Setup Restify Server
 var server = restify.createServer();
+server.use(restify.plugins.queryParser());
 server.listen(process.env.port || process.env.PORT || 3978, function () {
     console.log('%s listening to %s', server.name, server.url);
 });
@@ -15,8 +16,8 @@ var connector = new builder.ChatConnector({
     appPassword: process.env.MicrosoftAppPassword
 });
 // Listen for messages from users
-server.post('/api/oauth/login', oauth.generateLoginUri);
-server.post('/api/oauth/redirect', oauth.generateLoginUri);
+server.get('/api/oauth/login', oauth.generateLoginUri);
+server.get('/api/oauth/redirect', oauth.retrieveToken);
 server.post('/api/messages', connector.listen());
 var inMemoryStorage = new builder.MemoryBotStorage();
 // Receive messages from the user and respond by echoing each message back (prefixed with 'You said:')

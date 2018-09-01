@@ -18,7 +18,9 @@
   },
   "homepage": "https://github.com/double-driver/bunq-chatbot-interface#readme",
   "dependencies": {
+    "axios": "^0.18.0",
     "botbuilder": "^3.15.0",
+    "bunq-js-api": "^1.0.0",
     "restify": "^7.2.1"
   }
 }
