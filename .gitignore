@@ -82,4 +82,4 @@ bunqSecrets/*
 !bunqSecrets/.gitkeep
 !bunqSecrets/sessions/
 !bunqSecrets/sessions/.gitkeep
-# dist/*
+dist/*

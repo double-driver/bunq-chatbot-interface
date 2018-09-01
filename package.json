@@ -24,10 +24,10 @@
     "bunq-js-api": "^1.0.0",
     "mongodb": "^3.1.4",
     "restify": "^7.2.1",
-    "tsc": "^1.20150623.0"
+    "tsc": "^1.20150623.0",
+    "typescript": "^2.9.2"
   },
   "devDependencies": {
-    "tslint": "^5.8.0",
-    "typescript": "^2.9.2"
+    "tslint": "^5.8.0"
   }
 }
