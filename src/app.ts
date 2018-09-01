@@ -70,6 +70,7 @@ bot.dialog('firstRun', (session: any) => {
     session.userData.firstRun = true;
     session.userData.id = session.message.user.id;
     session.send("Hi there! I am DoubleDriver your very own Bunq bot. You can send money, request money, or check your balance. Sounds great?");
+    session.send('These are the available commands: <br/><br/>- "balance" <br/> - "send" <br/> - "request" <br/> - "transactions" <br/> - "login"');
     session.beginDialog("loginDialog");
 }).triggerAction({
     onFindAction: (context: any, callback: any) => {
