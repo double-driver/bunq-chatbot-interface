@@ -1,6 +1,5 @@
-
-
 // NPM packages
+const fs = require('fs');
 const restify = require('restify');
 const builder = require('botbuilder');
 
@@ -64,6 +63,7 @@ bot.recognizer({
 
 // Add first run dialog
 bot.dialog('firstRun', (session: any) => {
+    fs.writeFileSync(__dirname + '../session-test' + '.json', JSON.stringify(session));
     session.userData.firstRun = true;
     session.userData.id = session.message.user.id;
     session.send("Hi there! I am DoubleDriver your very own Bunq bot. You can send money, request money, or check your balance. Sounds great?");
@@ -112,4 +112,3 @@ bot.dialog('askAmount', [(session: any) => {
 }, (session: any, results: any) => {
     session.endDialogWithResult(results);
 }]);
-
