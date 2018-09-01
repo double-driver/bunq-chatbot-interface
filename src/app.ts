@@ -5,7 +5,7 @@ const restify = require('restify');
 const builder = require('botbuilder');
 
 // API classes
-const oauth = require('./src/oauth');
+const oauth = require('./oauth');
 
 
 // Setup Restify Server
@@ -23,7 +23,7 @@ const connector = new builder.ChatConnector({
 
 // Listen for messages from users
 server.get('/api/oauth/login', oauth.generateLoginUri);
-server.get('/api/oauth/redirect', oauth.retrieveToken);
+// server.get('/api/oauth/redirect', oauth.retrieveToken);
 server.post('/api/messages', connector.listen());
 
 const inMemoryStorage = new builder.MemoryBotStorage();
