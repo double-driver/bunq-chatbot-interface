@@ -74,7 +74,8 @@ bot.dialog('firstRun', (session: any) => {
         attachments: [
             {
                 contentType: 'image/png',
-                contentUrl: bunqLogoUri
+                contentUrl: bunqLogoUri,
+                name: 'bunq Logo'
             }
         ]
     });
