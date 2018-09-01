@@ -1,5 +1,6 @@
 {
   "clientId": "your-client-id",
   "clientSecret": "your-client-secret",
-  "redirectUri": "your-redirect-uri"
+  "redirectUri": "your-redirect-uri",
+  "apiBaseUrl": "https://doubledriverapi.azurewebsites.net/api/"
 }
