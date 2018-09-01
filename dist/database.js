@@ -1,31 +1,30 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const db = require("quick.db");
-const bunquser_1 = require("./models/bunquser");
-class database {
-    static addUser(user_id, user_public_key, user_private_key, server_public_key, token) {
-        let UID = `bunquser${user_id}`;
-        let user = new bunquser_1.bunqUser();
-        user.server_public_key = server_public_key;
-        user.token = token;
-        user.user_id = user_id;
-        user.user_private_key = user_private_key;
-        user.user_public_key = user_public_key;
-        db.fetch(UID)
-            .then((data) => {
-            if (data == null) {
-                db.set(UID, user);
+const MongoClient = require('mongodb').MongoClient;
+const configHandler = require('./config');
+class Database {
+    static createUser(data) {
+        MongoClient.connect(`mongodb://${configHandler.retrieveConfigVariable('mongoDb')}`, (err, client) => {
+            if (err) {
+                throw err;
             }
-            console.log(data);
-        })
-            .catch(err => {
-            console.error(err);
+            const db = client.db('bunq');
+            const collection = db.collection('users');
+            collection.insert(data, (err, result) => {
+                if (err)
+                    console.error(err);
+                console.log(result);
+            });
+            client.close();
         });
-        return false;
     }
-    static startWeb() {
-        db.createWebview('password', 13508);
+    static async retrieveUser(userId) {
+        const client = await MongoClient.connect(`mongodb://${configHandler.retrieveConfigVariable('mongoDb')}`);
+        const db = client.db('bunq');
+        const collection = db.collection('users');
+        const result = await collection.findOne({ userId });
+        client.close();
+        return result;
     }
 }
-exports.database = database;
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiZGF0YWJhc2UuanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi9zcmMvZGF0YWJhc2UudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7QUFBQSwrQkFBK0I7QUFDL0IsZ0RBQXdEO0FBRXhEO0lBRUksTUFBTSxDQUFDLE9BQU8sQ0FBQyxPQUFjLEVBQUUsZUFBdUIsRUFBQyxnQkFBd0IsRUFBQyxpQkFBeUIsRUFBQyxLQUFhO1FBQ25ILElBQUksR0FBRyxHQUFHLFdBQVcsT0FBTyxFQUFFLENBQUM7UUFDL0IsSUFBSSxJQUFJLEdBQWMsSUFBSSxtQkFBUSxFQUFFLENBQUM7UUFFckMsSUFBSSxDQUFDLGlCQUFpQixHQUFHLGlCQUFpQixDQUFDO1FBQzNDLElBQUksQ0FBQyxLQUFLLEdBQUcsS0FBSyxDQUFDO1FBQ25CLElBQUksQ0FBQyxPQUFPLEdBQUcsT0FBTyxDQUFDO1FBQ3ZCLElBQUksQ0FBQyxnQkFBZ0IsR0FBRyxnQkFBZ0IsQ0FBQztRQUN6QyxJQUFJLENBQUMsZUFBZSxHQUFHLGVBQWUsQ0FBQztRQUV2QyxFQUFFLENBQUMsS0FBSyxDQUFDLEdBQUcsQ0FBQzthQUVSLElBQUksQ0FBQyxDQUFDLElBQWdCLEVBQUUsRUFBRTtZQUV2QixJQUFJLElBQUksSUFBSSxJQUFJLEVBQUU7Z0JBRWQsRUFBRSxDQUFDLEdBQUcsQ0FBQyxHQUFHLEVBQUUsSUFBSSxDQUFDLENBQUM7YUFDckI7WUFHRCxPQUFPLENBQUMsR0FBRyxDQUFDLElBQUksQ0FBQyxDQUFDO1FBQ3RCLENBQUMsQ0FBQzthQUNELEtBQUssQ0FBQyxHQUFHLENBQUMsRUFBRTtZQUNULE9BQU8sQ0FBQyxLQUFLLENBQUMsR0FBRyxDQUFDLENBQUM7UUFDdkIsQ0FBQyxDQUFDLENBQUM7UUFFUCxPQUFPLEtBQUssQ0FBQztJQUNqQixDQUFDO0lBRUQsTUFBTSxDQUFDLFFBQVE7UUFDWCxFQUFFLENBQUMsYUFBYSxDQUFDLFVBQVUsRUFBRSxLQUFLLENBQUMsQ0FBQztJQUN4QyxDQUFDO0NBR0o7QUFwQ0QsNEJBb0NDIn0=
+module.exports = Database;
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiZGF0YWJhc2UuanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi9zcmMvZGF0YWJhc2UudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IjtBQUFBLE1BQU0sV0FBVyxHQUFHLE9BQU8sQ0FBQyxTQUFTLENBQUMsQ0FBQyxXQUFXLENBQUM7QUFFbkQsTUFBTSxhQUFhLEdBQVEsT0FBTyxDQUFDLFVBQVUsQ0FBQyxDQUFDO0FBRy9DO0lBQ0ksTUFBTSxDQUFDLFVBQVUsQ0FBQyxJQUFJO1FBQ2xCLFdBQVcsQ0FBQyxPQUFPLENBQUMsYUFBYSxhQUFhLENBQUMsc0JBQXNCLENBQUMsU0FBUyxDQUFDLEVBQUUsRUFBRSxDQUFDLEdBQUcsRUFBRSxNQUFNLEVBQUUsRUFBRTtZQUNoRyxJQUFJLEdBQUcsRUFBRTtnQkFDTCxNQUFNLEdBQUcsQ0FBQzthQUNiO1lBRUQsTUFBTSxFQUFFLEdBQUcsTUFBTSxDQUFDLEVBQUUsQ0FBQyxNQUFNLENBQUMsQ0FBQztZQUM3QixNQUFNLFVBQVUsR0FBRyxFQUFFLENBQUMsVUFBVSxDQUFDLE9BQU8sQ0FBQyxDQUFDO1lBRTFDLFVBQVUsQ0FBQyxNQUFNLENBQUMsSUFBSSxFQUFFLENBQUMsR0FBRyxFQUFFLE1BQU0sRUFBRSxFQUFFO2dCQUNwQyxJQUFJLEdBQUc7b0JBQUUsT0FBTyxDQUFDLEtBQUssQ0FBQyxHQUFHLENBQUMsQ0FBQztnQkFDNUIsT0FBTyxDQUFDLEdBQUcsQ0FBQyxNQUFNLENBQUMsQ0FBQztZQUN4QixDQUFDLENBQUMsQ0FBQztZQUVILE1BQU0sQ0FBQyxLQUFLLEVBQUUsQ0FBQztRQUNuQixDQUFDLENBQUMsQ0FBQztJQUNQLENBQUM7SUFFRCxNQUFNLENBQUMsS0FBSyxDQUFDLFlBQVksQ0FBQyxNQUFNO1FBQzVCLE1BQU0sTUFBTSxHQUFHLE1BQU0sV0FBVyxDQUFDLE9BQU8sQ0FBQyxhQUFhLGFBQWEsQ0FBQyxzQkFBc0IsQ0FBQyxTQUFTLENBQUMsRUFBRSxDQUFDLENBQUM7UUFDekcsTUFBTSxFQUFFLEdBQUcsTUFBTSxDQUFDLEVBQUUsQ0FBQyxNQUFNLENBQUMsQ0FBQztRQUM3QixNQUFNLFVBQVUsR0FBRyxFQUFFLENBQUMsVUFBVSxDQUFDLE9BQU8sQ0FBQyxDQUFDO1FBRTFDLE1BQU0sTUFBTSxHQUFHLE1BQU0sVUFBVSxDQUFDLE9BQU8sQ0FBQyxFQUFDLE1BQU0sRUFBQyxDQUFDLENBQUM7UUFDbEQsTUFBTSxDQUFDLEtBQUssRUFBRSxDQUFDO1FBRWYsT0FBTyxNQUFNLENBQUM7SUFDbEIsQ0FBQztDQUNKO0FBRUQsTUFBTSxDQUFDLE9BQU8sR0FBRyxRQUFRLENBQUMifQ==
