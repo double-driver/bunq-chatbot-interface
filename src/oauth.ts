@@ -1,5 +1,11 @@
 // Imports
 const axios: any = require('axios');
+const fs = require('fs');
+import {
+    BunqKey,
+    BunqApiConfig
+} from 'bunq-js-api/dist';
+
 const config: any = require('./config');
 
 // Link generation
@@ -14,8 +20,24 @@ const accessToken = 'access_token';
 
 class Oauth {
     static generateLoginUriEndpoint(req: any, res: any, next: any) {
-        res.send(Oauth.generateLoginUri);
+        Oauth.createKeys();
+        res.send(Oauth.generateLoginUri());
         return next();
+    }
+
+    static createKeys() {
+        const config: BunqApiConfig = new BunqApiConfig(__dirname + '/..' + '/bunq-config.json');
+        const secretsPath = __dirname + '/' + config.json.secretsPath;
+
+        let bunqKey: BunqKey = BunqKey.createNew();
+        let publicPem = bunqKey.toPublicKeyString();
+        let publicKeyName: string = secretsPath + "/publicKey" + ".pem";
+        console.log(secretsPath);
+        fs.writeFileSync(publicKeyName, publicPem);
+
+        let privatePem = bunqKey.toPrivateKeyString();
+        let privateKeyName: string = secretsPath + "/privateKey" + ".pem";
+        fs.writeFileSync(privateKeyName, privatePem);
     }
 
     static generateLoginUri() {
