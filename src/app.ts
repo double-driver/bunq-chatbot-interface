@@ -30,9 +30,7 @@ server.post('/api/messages', connector.listen());
 const inMemoryStorage = new builder.MemoryBotStorage();
 
 // Receive messages from the user and respond by echoing each message back (prefixed with 'You said:')
-const bot = new builder.UniversalBot(connector, (session: any) => {
-    session.send("You said: %s", session.message.text);
-}).set('storage', inMemoryStorage);
+const bot = new builder.UniversalBot(connector).set('storage', inMemoryStorage);
 
 // Install a custom recognizer to look for user saying 'help' or 'goodbye'.
 bot.recognizer({
@@ -66,7 +64,8 @@ bot.recognizer({
 // Add first run dialog
 bot.dialog('firstRun', (session: any) => {
     session.userData.firstRun = true;
-    session.send("Hi there! I am DoubleDriver your very own Bunq bot. You can send money, request money, or check your balance. Sounds great?").endDialog();
+    session.send("Hi there! I am DoubleDriver your very own Bunq bot. You can send money, request money, or check your balance. Sounds great?");
+    session.beginDialog("loginDialog");
 }).triggerAction({
     onFindAction: (context: any, callback: any) => {
         // Only trigger if we've never seen user before
@@ -93,7 +92,7 @@ bot.dialog('loginDialog', (session: any) => {
 bot.dialog('sendDialog', [(session: any) => {
     session.beginDialog('askAmount');
 }, (session: any, results: any) => {
-    session.endDialog(`We will send ${results.response}!`);
+    session.dialog(`Who do you want to send €${results.response}?`);
 }]).triggerAction({matches: 'Send'});
 
 bot.dialog('requestDialog', (session: any) => {
@@ -107,7 +106,7 @@ bot.dialog('balanceDialog', async (session: any) => {
 
 bot.dialog('askAmount', [(session: any) => {
     session.send("So you want to send money. That's great I can help in that!");
-    builder.Prompts.text(session, 'Which amount?')
+    builder.Prompts.number(session, 'Which amount?')
 }, (session: any, results: any) => {
     session.endDialogWithResult(results);
 }]);
