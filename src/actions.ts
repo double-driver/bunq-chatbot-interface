@@ -18,6 +18,24 @@ const bunqSessionFile = __dirname + '/' + config.json.bunqSessionFile;
 const bunqSessionHistoryPath = __dirname + '/' + config.json.bunqSessionHistoryPath;
 const userDataFile = secretsPath + '/requestUserResponse.json';
 
+// Bunq API objects
+const deviceServerConfig = BunqApiConfig.readJson(secretsFile);
+const privateKeyPem: string = BunqApiConfig.read(privateKeyFile);
+const key: BunqKey = new BunqKey(privateKeyPem);
+const installationTokenConfig = BunqApiConfig.readJson(installationTokenFile);
+const installationToken: string = installationTokenConfig.Response[1].Token.token;
+const connect: BunqConnection = new BunqConnection();
+const setup: BunqApiSetup = new BunqApiSetup(connect, key, deviceServerConfig.secret, installationToken);
+const bunqApi: BunqApi = new BunqApi(
+    connect,
+    key,
+    deviceServerConfig.secret,
+    setup,
+    bunqSessionFile,
+    bunqSessionHistoryPath
+);
+bunqApi.setPubBunqKeyPem(installationTokenConfig.Response[2].ServerPublicKey.server_public_key);
+
 
 class Actions {
     static getBalance() {
@@ -25,23 +43,6 @@ class Actions {
             await oauth.requestUser();
 
             const userData = BunqApiConfig.readJson(userDataFile);
-            const deviceServerConfig = BunqApiConfig.readJson(secretsFile);
-            const privateKeyPem: string = BunqApiConfig.read(privateKeyFile);
-            const key: BunqKey = new BunqKey(privateKeyPem);
-            const installationTokenConfig = BunqApiConfig.readJson(installationTokenFile);
-            const installationToken: string = installationTokenConfig.Response[1].Token.token;
-            const connect: BunqConnection = new BunqConnection();
-            const setup: BunqApiSetup = new BunqApiSetup(connect, key, deviceServerConfig.secret, installationToken);
-            const bunqApi: BunqApi = new BunqApi(
-                connect,
-                key,
-                deviceServerConfig.secret,
-                setup,
-                bunqSessionFile,
-                bunqSessionHistoryPath
-            );
-
-            bunqApi.setPubBunqKeyPem(installationTokenConfig.Response[2].ServerPublicKey.server_public_key);
 
             bunqApi.requestMonetaryAccountBank(userData.Response[0].UserApiKey.id, deviceServerConfig.accountId).then((response: any) => {
                 let resp: any = JSON.parse(response);
@@ -51,6 +52,24 @@ class Actions {
                 reject(error);
             });
         });
+    }
+
+    static sendPayment(amount, iban, name, description) {
+        bunqApi.sendPayment(
+            deviceServerConfig.userId,
+            deviceServerConfig.accountId,
+            amount,
+            iban,
+            name,
+            description
+        )
+            .then((response: string) => {
+                const resp: any = JSON.parse(response);
+                console.log("balance: " + resp.Response[0].MonetaryAccountBank.balance.value);
+                return resp;
+            }).catch((error: string) => {
+                console.log("error:" + error);
+            });
     }
 }
 
