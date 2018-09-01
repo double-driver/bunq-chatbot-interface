@@ -8,6 +8,9 @@ const oauth = require('./oauth');
 const actions = require('./actions');
 
 
+// Constants
+const bunqLogoUri = 'https://together.bunq.com/public/attachments/4479669e0a509b26a4d22c98e2972c51.png';
+
 // Setup Restify Server
 const server = restify.createServer();
 server.use(restify.plugins.queryParser());
@@ -66,9 +69,17 @@ bot.recognizer({
 
 // Add first run dialog
 bot.dialog('firstRun', (session: any) => {
-    fs.writeFileSync(__dirname + '/../session-test' + '.json', JSON.stringify(session.message));
     session.userData.firstRun = true;
     session.userData.id = session.message.user.id;
+    session.send({
+        attachments: [
+            {
+                contentType: 'image/png',
+                contentUrl: bunqLogoUri,
+                name: 'bunq Logo'
+            }
+        ]
+    });
     session.send("Hi there! I am DoubleDriver your very own Bunq bot. You can send money, request money, or check your balance. Sounds great?");
     session.send('These are the available commands: <br/><br/>- "balance" <br/> - "send" <br/> - "request" <br/> - "transactions" <br/> - "login"');
     session.beginDialog("loginDialog");
