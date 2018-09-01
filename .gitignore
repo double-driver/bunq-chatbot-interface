@@ -79,8 +79,7 @@ TEST-results.xml
 package-lock.json
 config.json
 bunqSecrets/*
-bunqSecrets/sessions/*
 !bunqSecrets/.gitkeep
 !bunqSecrets/sessions/
 !bunqSecrets/sessions/.gitkeep
-dist/
+dist/*
