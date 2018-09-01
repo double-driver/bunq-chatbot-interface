@@ -46,9 +46,9 @@ bot.recognizer({
                     // @ts-ignore
                     intent = {score: 1.0, intent: 'Send'};
                     break;
-                case 'request':
+                case 'transactions':
                     // @ts-ignore
-                    intent = {score: 1.0, intent: 'Request'};
+                    intent = {score: 1.0, intent: 'Transactions'};
                     break;
                 case 'balance':
                     // @ts-ignore
@@ -146,9 +146,40 @@ bot.dialog('sendDialog', [
     }
 ]).triggerAction({matches: 'Send'});
 
-bot.dialog('requestDialog', (session: any) => {
-    session.endDialog("So you want to get money. That's great I can help in that!");
-}).triggerAction({matches: 'Request'});
+bot.dialog('transactionsDialog', [
+    async function (session, results) {
+        session.send("So you wanna send money? We can help you with that!");
+        session.dialogData.accountChoices = await actions.generateAccountChoices(session.userData.id);
+        builder.Prompts.choice(session, "From which account do you want to send?", session.dialogData.accountChoices);
+    },
+    async function (session, results) {
+        session.dialogData.selectedAccount = {
+            description: results.response.entity,
+            id: session.dialogData.accountChoices[results.response.entity].id
+        };
+
+        try {
+            const result = await actions.pastTransactions(
+                session.userData.id,
+                session.dialogData.selectedAccount.id
+            );
+
+            const transactions = {};
+            for (let transaction of result['Response']) {
+                transactions[transaction['Payment'].id] = {
+                    amount: `€${transaction['Payment']['amount']['value']}`,
+                };
+            }
+
+            session.send(`Your recent transactions: <br/><br/>${JSON.stringify(transactions)}`);
+        } catch (e) {
+            const errorMessage = JSON.parse(e.error);
+            session.send(`Request failed! <br/><br/>${errorMessage['Error'][0]['error_description_translated']}`);
+        }
+
+        session.endDialog();
+    }
+]).triggerAction({matches: 'Transactions'});
 
 bot.dialog('balanceDialog', async (session: any) => {
     const balance = await actions.getBalance(session.userData.id);
