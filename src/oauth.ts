@@ -74,13 +74,27 @@ class Oauth {
             // Create session
             const session = await Oauth.createSession(userId, token, keypair[1], installationToken);
 
-            database.createUser({
+            // Retrieve information about the accounts
+            const accountInfo = await Oauth.retrieveAccountInfo(
+                userId,
+                {
+                    userId,
+                    token,
+                    keypair,
+                    installationToken,
+                    deviceServer,
+                    session
+                }
+            );
+
+            await database.createUser({
                 userId,
                 token,
                 keypair,
                 installationToken,
                 deviceServer,
-                session
+                session,
+                accountInfo
             });
 
             res.send('Successful!');
@@ -151,6 +165,36 @@ class Oauth {
             }).catch((error: string) => {
                 console.log("error : " + error, 'createSession()');
                 reject();
+            });
+        });
+    }
+
+    static retrieveAccountInfo(userId, userData) {
+        return new Promise((resolve, reject) => {
+            const bunqSessionFile = __dirname + '/' + config.json.bunqSessionFile + userId + '.json';
+            const bunqSessionHistoryPath = __dirname + '/' + config.json.bunqSessionHistoryPath + '/bunqSession_' + userId + '.json';
+            const userApiKeyId = userData.session.Response[2].UserApiKey.id;
+            const token = userData.token;
+            const key: BunqKey = new BunqKey(userData.keypair[1]);
+            const installationToken: string = userData.installationToken.Response[1].Token.token;
+            const connect: BunqConnection = new BunqConnection();
+            const setup: BunqApiSetup = new BunqApiSetup(connect, key, token.secret, installationToken);
+            const bunqApi: BunqApi = new BunqApi(
+                connect,
+                key,
+                token.secret,
+                setup,
+                bunqSessionFile,
+                bunqSessionHistoryPath
+            );
+            bunqApi.setPubBunqKeyPem(userData.installationToken.Response[2].ServerPublicKey.server_public_key);
+
+            bunqApi.requestMonetaryAccountBank(userApiKeyId, '').then((response: any) => {
+                let resp: any = JSON.parse(response);
+                resolve(resp);
+            }).catch((error: string) => {
+                console.log(error);
+                reject(error);
             });
         });
     }

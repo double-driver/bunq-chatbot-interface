@@ -117,6 +117,7 @@ bot.dialog('sendDialog', [
     function (session, results) {
         if (results.response) {
             const result = actions.sendPayment(
+                session.userData.id,
                 session.dialogData.amount,
                 session.dialogData.recipientIban,
                 session.dialogData.recipientName,

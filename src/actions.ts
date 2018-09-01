@@ -44,23 +44,44 @@ class Actions {
         });
     }
 
-    static sendPayment(amount, iban, name, description) {
-        return true;
-        // bunqApi.sendPayment(
-        //     deviceServerConfig.userId,
-        //     deviceServerConfig.accountId,
-        //     amount,
-        //     iban,
-        //     name,
-        //     description
-        // )
-        //     .then((response: string) => {
-        //         const resp: any = JSON.parse(response);
-        //         console.log("balance: " + resp.Response[0].MonetaryAccountBank.balance.value);
-        //         return resp;
-        //     }).catch((error: string) => {
-        //         console.log("error:" + error);
-        //     });
+    static async sendPayment(userId, amount, iban, name, description) {
+        const userData = await Actions.requestUser(userId);
+
+        const bunqSessionFile = __dirname + '/' + config.json.bunqSessionFile + userId + '.json';
+        const bunqSessionHistoryPath = __dirname + '/' + config.json.bunqSessionHistoryPath + '/bunqSession_' + userId + '.json';
+        const userApiKeyId = userData.session.Response[2].UserApiKey.id;
+        const userAccountId = '';
+        const token = userData.token;
+        const key: BunqKey = new BunqKey(userData.keypair[1]);
+        const installationToken: string = userData.installationToken.Response[1].Token.token;
+        const connect: BunqConnection = new BunqConnection();
+        const setup: BunqApiSetup = new BunqApiSetup(connect, key, token.secret, installationToken);
+        const bunqApi: BunqApi = new BunqApi(
+            connect,
+            key,
+            token.secret,
+            setup,
+            bunqSessionFile,
+            bunqSessionHistoryPath
+        );
+        bunqApi.setPubBunqKeyPem(userData.installationToken.Response[2].ServerPublicKey.server_public_key);
+
+        bunqApi.sendPayment(
+            userApiKeyId,
+            userAccountId,
+            amount,
+            iban,
+            name,
+            description
+        )
+            .then((response: string) => {
+                const resp: any = JSON.parse(response);
+                console.log("balance: " + resp.Response[0].MonetaryAccountBank.balance.value);
+                return resp;
+            }).catch((error: string) => {
+            console.log("error:" + error);
+            return false;
+        });
     }
 
     static async requestUser(userId) {

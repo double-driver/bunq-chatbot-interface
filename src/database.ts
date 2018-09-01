@@ -9,7 +9,7 @@ class Database {
         const db = client.db('bunq');
         const collection = db.collection('users');
 
-        const result = await collection.insert(data);
+        const result = await collection.insertOne(data);
         client.close();
 
         return result;
