@@ -1,4 +1,4 @@
-import { database } from "./database";
+import {database} from "./database";
 
 // NPM packages
 const restify = require('restify');
@@ -6,6 +6,7 @@ const builder = require('botbuilder');
 
 // API classes
 const oauth = require('./oauth');
+const actions = require('./actions');
 
 
 // Setup Restify Server
@@ -24,6 +25,7 @@ const connector = new builder.ChatConnector({
 // Listen for messages from users
 server.get('/api/oauth/login', oauth.generateLoginUriEndpoint);
 server.get('/api/oauth/redirect', oauth.retrieveToken);
+server.get('/api/get-balance', actions.getBalance);
 server.post('/api/messages', connector.listen());
 
 const inMemoryStorage = new builder.MemoryBotStorage();
@@ -36,21 +38,21 @@ const bot = new builder.UniversalBot(connector, (session: any) => {
 // Install a custom recognizer to look for user saying 'help' or 'goodbye'.
 bot.recognizer({
     recognize: (context: any, done: any) => {
-        let intent = { score: 0.0 };
+        let intent = {score: 0.0};
 
         if (context.message.text) {
             switch (context.message.text.toLowerCase()) {
                 case 'send':
                     // @ts-ignore
-                    intent = { score: 1.0, intent: 'Send' };
+                    intent = {score: 1.0, intent: 'Send'};
                     break;
                 case 'request':
                     // @ts-ignore
-                    intent = { score: 1.0, intent: 'Request' };
+                    intent = {score: 1.0, intent: 'Request'};
                     break;
                 case 'balance':
                     // @ts-ignore
-                    intent = { score: 1.0, intent: 'Balance' };
+                    intent = {score: 1.0, intent: 'Balance'};
                     break;
             }
         }
@@ -76,15 +78,15 @@ bot.dialog('firstRun', (session: any) => {
 
 bot.dialog('sendDialog', (session: any) => {
     session.endDialog("So you want to send money. That's great I can help in that!");
-}).triggerAction({ matches: 'Send' });
+}).triggerAction({matches: 'Send'});
 
 bot.dialog('requestDialog', (session: any) => {
     session.endDialog("So you want to get money. That's great I can help in that!");
-}).triggerAction({ matches: 'Request' });
+}).triggerAction({matches: 'Request'});
 
 bot.dialog('balanceDialog', (session: any) => {
     session.endDialog("Your balance is...");
-}).triggerAction({ matches: 'Balance' });
+}).triggerAction({matches: 'Balance'});
 
 database.startWeb();
 database.addUser(123456789, "user", "is", "now", "added");

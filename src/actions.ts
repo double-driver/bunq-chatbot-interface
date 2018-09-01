@@ -2,9 +2,10 @@ const oauth: any = require('./oauth');
 
 
 class Actions {
-    static async getBalance() {
+    static async getBalance(req: any, res: any, next: any) {
         await oauth.requestUser();
-        return await oauth.getBalance();
+        const balance = await oauth.getBalance();
+        res.send(balance);
     }
 }
 
