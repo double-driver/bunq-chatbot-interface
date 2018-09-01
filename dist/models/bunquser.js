@@ -1,10 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class bunqUser {
-    constructor(username, token) {
-        this.username = username;
-        this.token = token;
+    constructor() {
+        this.user_id = 0;
+        this.user_public_key = "";
+        this.user_private_key = "";
+        this.server_public_key = "";
+        this.token = "";
     }
 }
 exports.bunqUser = bunqUser;
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYnVucXVzZXIuanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi8uLi9zcmMvbW9kZWxzL2J1bnF1c2VyLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7O0FBS0E7SUFFSSxZQUFZLFFBQWUsRUFBRSxLQUFZO1FBQ3JDLElBQUksQ0FBQyxRQUFRLEdBQUcsUUFBUSxDQUFDO1FBQ3pCLElBQUksQ0FBQyxLQUFLLEdBQUcsS0FBSyxDQUFDO0lBQ3ZCLENBQUM7Q0FNSjtBQVhELDRCQVdDIn0=
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYnVucXVzZXIuanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi8uLi9zcmMvbW9kZWxzL2J1bnF1c2VyLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7O0FBUUE7SUFBQTtRQUNJLFlBQU8sR0FBVSxDQUFDLENBQUM7UUFDbkIsb0JBQWUsR0FBVyxFQUFFLENBQUM7UUFDN0IscUJBQWdCLEdBQVcsRUFBRSxDQUFDO1FBQzlCLHNCQUFpQixHQUFXLEVBQUUsQ0FBQztRQUMvQixVQUFLLEdBQVcsRUFBRSxDQUFDO0lBQ3ZCLENBQUM7Q0FBQTtBQU5ELDRCQU1DIn0=
